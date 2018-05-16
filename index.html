@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>シューティングゲーム</title>
+    <style>
+        #canvas{
+            background-color: #333;
+        }
+    </style>
+    <script src="http://code.jquery.com/jquery-3.2.1.js"></script>
+</head>
+<body>
+    
+    <canvas id="canvas" width="600" height="600"></canvas>
+
+
+    <script>
+        // // canvas base
+        // // const can = document.getElementById("canvas");
+        // // const ctx = can.getContext("2d");
+
+        const can = $("#canvas")[0];
+        const ctx = can.getContext("2d");
+
+        let reverseFlag = true;
+        
+
+
+        /*---------------------------
+         * player機について
+         *--------------------------*/
+        //Player元オブジェクト
+        let player = {
+            posX:can.width/2,//UFOのX座標を管理する場所
+            posY:can.height -20,//UFOのY座標を管理する場所
+            w:null,
+            h:null,
+            image:"",
+            draw: function(){
+                const img = new Image();
+                img.src = "images/player3.jpg";
+                img.onload = function(){
+                    ctx.drawImage(img,can.width/2,can.height-20);
+                    player.w = img.width;
+                    player.h = img.height;
+                    player.image = img;
+                }
+
+            }
+        };
+
+     
+
+
+        
+
+
+        // // ctx.drawImage(player, 0, can.height/2);
+
+ 
+        // マウス操作でPlayer動かす関数
+        let mMove = function(e){
+            //x座標
+            //y座標
+            ctx.clearRect(player.posX,player.posY,player.w,can.height-20);
+            player.posX = e.offsetX;
+            player.posY = can.height-20;
+            ctx.drawImage(player.image,player.posX,can.height-20);
+        }
+
+        //マウスで動かした際のイベント設定
+        $(can).on("mousemove",mMove);
+
+        /*---------------------------
+         * ボールについて
+         *--------------------------*/
+        //ボール元オブジェクト
+
+
+        
+
+         let ball = {
+            speed:30,
+            r:8,
+            color: '#f00'
+            
+        };
+
+
+        //ボールの各弾データ管理用の格納配列
+       
+
+        let ballAry = [];
+
+        // ボール作成の関数
+            let ballInit = function () {
+                let newBall = Object.assign({
+                    posX: player.posX + 18,
+                    posY: player.posY - 10
+                }, ball);
+                ctx.fillStyle = newBall.color;
+                ballAry.push(newBall);
+            }
+        
+        // 配列内の全てのボールが移動するための関数
+        let ballMove = function(){
+            for(let i = 0; i < ballAry.length; i++){
+              ctx.clearRect(
+                  ballAry[i].posX - ballAry[i].r,
+                  ballAry[i].posY - ballAry[i].r,
+                  ballAry[i].r * 2,
+                  ballAry[i].r * 2);
+              ballAry[i].posY -= ballAry[i].speed;
+              ctx.fillStyle = ballAry[i].color;
+              ctx.beginPath();
+              ctx.arc(ballAry[i].posX,ballAry[i].posY,ballAry[i].r,0, Math.PI * 2,true);
+              ctx.fill();
+            }
+        }
+        // // 配列内の全てのボールを精査して、スクリーンアウトしたら消去する関数
+        // let ballDelete = function () {
+        //     let newBallAry = [];//新しい空っぽの配列
+        //     for (let i = 0; i < ballAry.length; i++) {
+        //         if (ballAry[i].posY <= ballAry.r * 2) {
+        //             delete ballAry[i];
+        //             ctx.clearRect(
+        //             ballAry[i].posX - ballAry[i].r,
+        //             0,
+        //             ballAry[i].r * 2,
+        //             ballAry[i].r * 2);
+        //             console.log("test");
+        //             } else {
+        //                 newBallAry.push(ballAry[i]);
+        //             }
+        //         }
+        //         ballAry = newBallAry;
+        //     }
+        
+
+        let ballDelete = function(){
+            let new_ballAry = [];
+            for(let i=0;i<ballAry.length;i++){
+                if(ballAry[i].posY<= -ballAry[i].r*2){
+                    delete ballAry[i];
+                }else{
+                    new_ballAry.push(ballAry[i]);
+                }
+            }
+            ballAry = new_ballAry;
+        };
+
+
+        // mousedownするたびにballデータを作成するようイベント追加
+        $(window).on("click", ballInit);
+        /*---------------------------
+         * 敵について
+         *--------------------------*/
+        // 敵の元オブジェクト
+        let enemy = {
+            speed:10,
+            posX:10,//enemyのX座標を管理する場所
+            posY:20,//UFOのY座標を管理する場所
+            w:null,
+            h:null,
+            image:"",
+            draw: function(){
+                const img = new Image();
+                img.src = "./images/enemy2.jpg";
+                img.onload = function(){
+                    ctx.drawImage(img,enemy.posX,enemy.posY,20,20);
+                    enemy.image = img;
+                    enemy.w = 20;
+                    enemy.h = 20;
+                }
+
+            }
+        };
+
+
+        // 敵格納用配列
+        let enemyAry = [];
+
+        // 敵の出現+配列への格納のための関数
+        
+
+        //   let appearEnemy = function(){
+        //     const percent = Math.floor(Math.random()*100);//敵が出てくる確率
+        //     const randomXPosition = Math.floor(Math.random()*can.width);//敵が出現する場所をランダムで変更する
+
+        //     let newEnemy = Object.assign({posX:randomXPosition},enemy);
+        //     if(percent>90){
+        //         ctx.drawImage(newEnemy.image,newEnemy.posX,newEnemy.posY,20,20);
+        //         enemyAry.push(newEnemy);
+        //     }
+        // }
+
+        // // 敵を動かすための関数
+        // let moveEnemy = function(){
+        //     for(let i =0;i<enemyAry.length;i++){
+        //         ctx.clearRect(enemyAry[i].posX,enemyAry[i].posY,enemyAry[i].w,enemyAry[i].h);
+        //         enemyAry[i].posY += enemyAry[i].speed;
+        //         ctx.drawImage(enemyAry[i].image,enemyAry[i].posX,enemyAry[i].posY,20,20);
+        //     }
+        // }
+
+        let moveEnemy = function(){
+            ctx.clearRect(enemy.posX,enemy.posY,enemy.w,enemy.h);
+            enemy.posX += enemy.speed;
+            ctx.drawImage(enemy.image,enemy.posX,enemy.posY,20,20);
+        }
+
+        //敵が橋に行ったらreverseを起動
+        let enemyPosition = function(){
+            if(enemy.posX <= 5|| enemy.posX + enemy.w >= can.width){
+                reverse();
+            }
+        }
+
+        //敵が橋に行ったら方向を変える
+        let reverse = function(){
+            if (reverseFlag){
+                console.log("true");
+                ctx.clearRect(enemy.posX,enemy.posY,enemy.w,enemy.h);
+                enemy.speed -= 16;
+                enemy.posY += 16;
+                reverseFlag = false;
+            }else{
+                console.log("else");
+                ctx.clearRect(enemy.posX,enemy.posY,enemy.w,enemy.h);
+                enemy.speed += 16;
+                enemy.posY += 16;
+                reverseFlag = true;
+            }
+        }
+
+
+        // // 敵がスクリーンアウトした際に配列から消去するための関数
+        // let deleteEnemy = function(){
+        //     let newEnemys = [];
+        //     for(let i=0;i<enemyAry.length;i++){
+        //         if(enemyAry[i].posY<=can.height-enemy.h){
+        //             newEnemys.push(enemyAry[i]);
+        //         }else{
+        //             ctx.clearRect(enemyAry[i].posX,enemyAry[i].posY,enemyAry[i].w,enemyAry[i].h);
+        //         }
+        //     }
+        //     enemyAry = newEnemys;
+        // }
+
+        
+
+        // /*---------------------------
+        //  * 当たり判定
+        //  *--------------------------*/
+        // // let hitBox = function(){
+        // //     for(let i =0;i<ballAry.length;i++){
+                
+        // //         const b = ballAry[i];
+        // //         // if((b.posX+b.w)>=enemy.posX&&b.posY<=(enemy.posY+enemy.h)&&(b.posY+b.h)>=enemy.posY){
+        // //         if((b.posY-b.r)<=(enemy.posY+enemy.h)&&(b.posX-b.r)<=(enemy.posX+enemy.w)&&(b.posX+b.r)>=enemy.posX){
+        // //             ctx.clearRect(enemy.posX,enemy.posY,enemy.w,enemy.h);
+        // //             ctx.clearRect(b.posX - b.r, b.posY - b.r, b.r *2, b.r *2);
+        // //             ballAry.splice(i,1);
+        // //         };
+        // //     };
+        // // };
+
+        let hitBox = function(){
+            for(let i=0;i<ballAry.length;i++){
+                const b = ballAry[i];//１発１発の弾=b
+                    //for(let j=0;j<enemyAry.length;j++){
+                    // const a = enemyAry[j];//1体1体の敵=a
+                    const a = enemy;
+                    if((b.posY-b.r)<=(a.posY+a.h)&&(b.posX-b.r)<=(a.posX+a.w)&&(b.posX+b.r)>=a.posX){
+                        console.log("hitBox");
+                        // enemyAry.splice(j,1);
+                        ctx.clearRect(a.posX,a.posY,a.w,a.h);
+                        ballAry.splice(i,1);
+                        ctx.clearRect(b.posX - b.r, b.posY - b.r,(b.r*2),(b.r*2));
+                    }
+                }
+            }
+        // }
+
+
+        /*---------------------------
+         * 読み込み時に実行する関数
+         *--------------------------*/
+        $(window).on("load", function(){
+            player.draw();
+            enemy.draw();
+        })
+
+        // /*---------------------------
+        //  * ループで実行する関数
+        //  *--------------------------*/
+         setInterval(function(){
+           ballMove();
+           ballDelete();
+           hitBox();
+        //    appearEnemy();
+           moveEnemy();
+           //もしエネミーが橋に行ったらreverse()を起動
+           enemyPosition();
+        //    deleteEnemy();
+         },100)
+    
+    </script>
+</body>
+</html>
